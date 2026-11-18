@@ -910,7 +910,161 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
         {
             return "CART: " + CountCartItems() + " item(s)";
         }
+        static string ReadInput(string prompt)
+        {
+            Console.Write(" " + prompt + " > ");
+            string line = Console.ReadLine();
 
+            if (line == null)
+            {
+                throw new InputClosedException();
+            }
+
+            return line.Trim();
+        }
+
+        /// <summary>Reads a password and shows * for each key (plain read if input is redirected).</summary>
+        static string ReadPassword(string prompt)
+        {
+            Console.Write(" " + prompt + " > ");
+
+            if (Console.IsInputRedirected)
+            {
+                string line = Console.ReadLine();
+                if (line == null)
+                {
+                    throw new InputClosedException();
+                }
+                return line;
+            }
+
+            StringBuilder typed = new StringBuilder();
+
+            while (true)
+            {
+                ConsoleKeyInfo key = Console.ReadKey(true);
+
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    return typed.ToString();
+                }
+
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (typed.Length > 0)
+                    {
+                        typed.Length--;
+                        Console.Write("\b \b");
+                    }
+                }
+                else if (!char.IsControl(key.KeyChar))
+                {
+                    typed.Append(key.KeyChar);
+                    Console.Write('*');
+                }
+            }
+        }
+
+        /// <summary>Category choice must be a whole number from 1 to the number of categories.</summary>
+        static bool TryGetCategoryIndex(string input, out int index)
+        {
+            index = -1;
+
+            if (int.TryParse(input, NumberStyles.None, CultureInfo.InvariantCulture, out int number)
+                && number >= 1 && number <= categoryNames.Length)
+            {
+                index = number - 1;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Item number must be valid AND belong to the category being shown.</summary>
+        static bool TryGetItemInCategory(string input, int categoryIndex, out int index)
+        {
+            index = -1;
+
+            if (int.TryParse(input, NumberStyles.None, CultureInfo.InvariantCulture, out int number)
+                && number >= 1 && number <= menuNames.Length
+                && menuCategory[number - 1] == categoryIndex)
+            {
+                index = number - 1;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Quantity must be a whole number from 1 to 99 (rejects blank, text, decimals, negatives).</summary>
+        static bool TryParseQuantity(string input, out int quantity)
+        {
+            return int.TryParse(input, NumberStyles.None, CultureInfo.InvariantCulture, out quantity)
+                   && quantity >= 1 && quantity <= MaxQuantity;
+        }
+
+        /// <summary>Cash must be a non-negative number with at most two decimal places.</summary>
+        static bool TryParseCash(string input, out decimal cash, out string error)
+        {
+            cash = 0m;
+            error = "";
+
+            if (input.Length == 0)
+            {
+                error = "Cash amount cannot be blank. Example: 300 or 300.50.";
+                return false;
+            }
+
+            if (!decimal.TryParse(input, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
+                    CultureInfo.InvariantCulture, out decimal parsed))
+            {
+                error = "\"" + Fit(input, 20) + "\" is not a valid amount. Use digits only, e.g. 300 or 300.50.";
+                return false;
+            }
+
+            if (parsed < 0m)
+            {
+                error = "Cash cannot be negative.";
+                return false;
+            }
+
+            int dotPosition = input.IndexOf('.');
+            if (dotPosition >= 0 && input.Length - dotPosition - 1 > 2)
+            {
+                error = "Use at most 2 decimal places (centavos), e.g. 120.50.";
+                return false;
+            }
+
+            if (parsed > MaxCash)
+            {
+                error = "That amount is too large. Maximum is " + FormatMoney(MaxCash) + ".";
+                return false;
+            }
+
+            cash = parsed;
+            return true;
+        }
+
+        /// <summary>Asks Y/N. If the answer is Y, the cart is cleared and true is returned.</summary>
+        static bool ConfirmCancel()
+        {
+            while (true)
+            {
+                string answer = ReadInput("Cancel this order and clear the cart? (Y/N)").ToUpperInvariant();
+
+                if (answer == "Y")
+                {
+                    ClearCart();
+                    return true;
+                }
+                if (answer == "N")
+                {
+                    return false;
+                }
+                Console.WriteLine(Error("Please enter Y or N."));
+            }
+        }
     }
 }
 
