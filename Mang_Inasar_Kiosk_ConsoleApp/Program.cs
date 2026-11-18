@@ -1,4 +1,6 @@
-﻿namespace Mang_Inasar_Kiosk_ConsoleApp
+﻿using System.Text;
+
+namespace Mang_Inasar_Kiosk_ConsoleApp
 {
     internal class Program
     {
@@ -98,6 +100,68 @@
             // Cart quantity for each menu item (same index as the menu arrays).
             static readonly int[] cartQuantities = new int[menuNames.Length];
         }
+
+        static void Main()
+        {
+            Console.OutputEncoding = Encoding.UTF8;
+
+            try
+            {
+                RunMainMenu();
+            }
+            catch (InputClosedException)
+            {
+                Console.WriteLine();
+                Console.WriteLine(" Input closed. Goodbye!");
+            }
+        }
+
+        static void RunMainMenu()
+        {
+            bool running = true;
+            string message = "";
+
+            while (running)
+            {
+                ShowMainMenu(message);
+                message = "";
+
+                string choice = ReadInput("Enter your choice").ToUpperInvariant();
+
+                switch (choice)
+                {
+                    case "1":
+                        RunCustomerView();
+                        break;
+                    case "2":
+                        if (CashierLogin())
+                        {
+                            RunCashierView();
+                        }
+                        break;
+                    case "3":
+                        running = false;
+                        break;
+                    default:
+                        message = Error("Invalid choice. Please enter 1, 2 or 3.");
+                        break;
+                }
+            }
+
+            ShowMessageBox("Thank you! Goodbye.", waitForEnter: false);
+        }
+
+        static void ShowMainMenu(string message)
+        {
+            BeginScreen();
+            DrawBanner(RestaurantName, "Order here. Ihaw Sarap Unli Sarap!");
+            DrawOptions(
+                "   [1]  Customer View",
+                "   [2]  Cashier View",
+                "   [3]  Exit");
+            EndScreen(message);
+        }
+
     }
 }
 
