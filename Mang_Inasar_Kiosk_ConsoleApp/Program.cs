@@ -369,7 +369,156 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
                 "  [X] Cancel order");
             EndScreen(message);
         }
+        static PaymentResult ProcessPayment()
+        {
+            decimal total = CalculateTotal();
+            string message = "";
 
+            while (true)
+            {
+                ShowPaymentScreen(total, message);
+                message = "";
+
+                string input = ReadInput("Enter cash amount");
+
+                if (input.Equals("X", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (ConfirmCancel())
+                    {
+                        return PaymentResult.Cancelled;
+                    }
+                    continue;
+                }
+
+                if (input.Equals("B", StringComparison.OrdinalIgnoreCase))
+                {
+                    return PaymentResult.BackToOrder;
+                }
+
+                if (!TryParseCash(input, out decimal cash, out string cashError))
+                {
+                    message = Error(cashError);
+                    continue;
+                }
+
+                if (cash < total)
+                {
+                    // Rejected attempt: nothing is remembered, the full amount must be re-entered.
+                    message = Error("Cash is not enough. You still need " + FormatMoney(total - cash)
+                                    + ". Enter the full amount again, or X to cancel.");
+                    continue;
+                }
+
+                PaidOrder order = BuildOrderFromCart(cash, cash - total);
+
+                if (SaveWithRetry(order))
+                {
+                    ShowReceiptScreen(order, "Thank you! Please take your receipt.");
+                    ClearCart();    // ready for the next customer
+                    return PaymentResult.Paid;
+                }
+
+                // Saving failed and the customer chose not to retry.
+                return PaymentResult.BackToOrder;
+            }
+        }
+
+        static void ShowPaymentScreen(decimal total, string message)
+        {
+            BeginScreen();
+            DrawHeader("PAYMENT (CASH)");
+            DrawBlank();
+            DrawRow("Amount due:", FormatMoney(total));
+            DrawBlank();
+            DrawLine(" Enter the cash you are handing over, in pesos");
+            DrawLine(" (up to 2 decimal places, e.g. 300 or 300.50).");
+            DrawBlank();
+            DrawActions("  [B] Back to order        [X] Cancel order");
+            EndScreen(message);
+        }
+
+        /// <summary>
+        /// Tries to save the order. On failure shows the error and lets the user retry
+        /// or go back to the order. Returns true only when the order was saved.
+        /// A failed attempt writes nothing, so a retry cannot create duplicate records.
+        /// </summary>
+        static bool SaveWithRetry(PaidOrder order)
+        {
+            while (true)
+            {
+                if (TrySaveOrder(order, out string saveError))
+                {
+                    return true;
+                }
+
+                ShowSaveFailedScreen(saveError);
+
+                while (true)
+                {
+                    string choice = ReadInput("Enter your choice").ToUpperInvariant();
+
+                    if (choice == "R")
+                    {
+                        break;      // outer loop tries to save again
+                    }
+                    if (choice == "B")
+                    {
+                        return false;
+                    }
+                    Console.WriteLine(Error("Invalid choice. Enter R or B."));
+                }
+            }
+        }
+
+        static void ShowSaveFailedScreen(string saveError)
+        {
+            BeginScreen();
+            DrawHeader("! PAYMENT NOT COMPLETED");
+            DrawLine(" The order could NOT be saved, so the sale was not recorded.");
+            DrawLine(" Reason: " + Fit(saveError, 50));
+            DrawBlank();
+            DrawLine("  [R] Retry saving");
+            DrawLine("  [B] Back to order (nothing was saved)");
+            EndScreen();
+        }
+
+        /// <summary>Builds a PAID order from the current cart.</summary>
+        static PaidOrder BuildOrderFromCart(decimal cash, decimal change)
+        {
+            PaidOrder order = new PaidOrder();
+
+            for (int i = 0; i < menuNames.Length; i++)
+            {
+                if (cartQuantities[i] > 0)
+                {
+                    order.ItemNames.Add(menuNames[i]);
+                    order.UnitPrices.Add(menuPrices[i]);
+                    order.Quantities.Add(cartQuantities[i]);
+                    order.Subtotals.Add(CalculateSubtotal(menuPrices[i], cartQuantities[i]));
+                }
+            }
+
+            order.Total = CalculateTotal();
+            order.Cash = cash;
+            order.Change = change;
+            return order;
+        }
+
+        static void ShowReceiptScreen(PaidOrder order, string footer)
+        {
+            BeginScreen();
+            DrawBanner(RestaurantName, "OFFICIAL RECEIPT");
+            DrawRow("Order ID: " + order.OrderId, "Status: " + order.Status);
+            DrawDivider();
+            DrawOrderTable(order);
+            DrawRow("TOTAL", FormatMoney(order.Total));
+            DrawRow("CASH", FormatMoney(order.Cash));
+            DrawRow("CHANGE", FormatMoney(order.Change));
+            DrawDivider();
+            DrawCentered(footer);
+            EndScreen();
+            Pause();
+        }
     }
 }
 
