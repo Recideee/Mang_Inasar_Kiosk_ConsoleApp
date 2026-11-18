@@ -870,6 +870,46 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
         {
             return decimal.TryParse(text, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out amount);
         }
+        static decimal CalculateSubtotal(decimal unitPrice, int quantity)
+        {
+            return unitPrice * quantity;
+        }
+
+        /// <summary>Order total = sum of all line subtotals in the cart.</summary>
+        static decimal CalculateTotal()
+        {
+            decimal total = 0m;
+
+            for (int i = 0; i < menuNames.Length; i++)
+            {
+                total += CalculateSubtotal(menuPrices[i], cartQuantities[i]);
+            }
+
+            return total;
+        }
+
+        /// <summary>Total number of pieces in the cart.</summary>
+        static int CountCartItems()
+        {
+            int count = 0;
+
+            foreach (int quantity in cartQuantities)
+            {
+                count += quantity;
+            }
+
+            return count;
+        }
+
+        static void ClearCart()
+        {
+            Array.Clear(cartQuantities, 0, cartQuantities.Length);
+        }
+
+        static string CartLabel()
+        {
+            return "CART: " + CountCartItems() + " item(s)";
+        }
 
     }
 }
