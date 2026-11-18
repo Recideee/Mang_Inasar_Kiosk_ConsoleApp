@@ -162,6 +162,214 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
             EndScreen(message);
         }
 
+
+        static void RunCustomerView()
+        {
+            ClearCart();
+            bool inCustomerView = true;
+            string message = "";
+
+            while (inCustomerView)
+            {
+                ShowCategoryScreen(message);
+                message = "";
+
+                string choice = ReadInput("Enter category number").ToUpperInvariant();
+
+                if (choice == "C")
+                {
+                    // ReviewOrder returns true when the customer is finished (paid or cancelled).
+                    inCustomerView = !ReviewOrder();
+                }
+                else if (choice == "X")
+                {
+                    // An empty cart has nothing to lose, so no confirmation is needed.
+                    if (CountCartItems() == 0 || ConfirmCancel())
+                    {
+                        inCustomerView = false;
+                    }
+                }
+                else if (TryGetCategoryIndex(choice, out int categoryIndex))
+                {
+                    inCustomerView = !RunCategory(categoryIndex);
+                }
+                else
+                {
+                    message = Error("Invalid choice. Enter a category number 1-" + categoryNames.Length
+                                    + ", C to review, or X to cancel.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Item list for one category. Returns true when the customer is finished
+        /// (paid or cancelled), false to go back to the category list.
+        /// </summary>
+        static bool RunCategory(int categoryIndex)
+        {
+            string message = "";
+
+            while (true)
+            {
+                ShowItemScreen(categoryIndex, message);
+                message = "";
+
+                string choice = ReadInput("Enter item number").ToUpperInvariant();
+
+                if (choice == "B")
+                {
+                    return false;
+                }
+
+                if (choice == "C")
+                {
+                    if (ReviewOrder())
+                    {
+                        return true;
+                    }
+                }
+                else if (TryGetItemInCategory(choice, categoryIndex, out int itemIndex))
+                {
+                    message = AddItemToCart(itemIndex);
+                }
+                else
+                {
+                    message = Error("Invalid choice. Enter one of the item numbers shown, B to go back, or C to review.");
+                }
+            }
+        }
+
+        static void ShowCategoryScreen(string message)
+        {
+            BeginScreen();
+            DrawHeader("SELECT A CATEGORY", CartLabel());
+            DrawBlank();
+
+            for (int i = 0; i < categoryNames.Length; i++)
+            {
+                DrawLine(string.Format("  [{0}]  {1}", i + 1, categoryNames[i]));
+            }
+
+            DrawBlank();
+            DrawRow("Current total:", FormatMoney(CalculateTotal()));
+            DrawActions("  [C] Review order / checkout      [X] Cancel order");
+            EndScreen(message);
+        }
+
+        static void ShowItemScreen(int categoryIndex, string message)
+        {
+            BeginScreen();
+            DrawHeader(categoryNames[categoryIndex], CartLabel());
+            DrawBlank();
+
+            for (int i = 0; i < menuNames.Length; i++)
+            {
+                if (menuCategory[i] == categoryIndex)
+                {
+                    DrawLine(string.Format("  [{0,2}]  {1,-24}{2,16}", i + 1, menuNames[i], FormatMoney(menuPrices[i])));
+                }
+            }
+
+            DrawBlank();
+            DrawRow("Current total:", FormatMoney(CalculateTotal()));
+            DrawActions("  [B] Back to categories           [C] Review order");
+            EndScreen(message);
+        }
+
+        /// <summary>Asks for a quantity and adds it to the cart. Returns a message for the menu screen.</summary>
+        static string AddItemToCart(int itemIndex)
+        {
+            while (true)
+            {
+                string input = ReadInput("Quantity of " + menuNames[itemIndex] + " (1-" + MaxQuantity + ", B = back)");
+
+                if (input.Equals("B", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "";
+                }
+
+                if (!TryParseQuantity(input, out int quantity))
+                {
+                    Console.WriteLine(Error("Invalid quantity. Enter a whole number from 1 to " + MaxQuantity + "."));
+                    continue;
+                }
+
+                if (cartQuantities[itemIndex] + quantity > MaxQuantity)
+                {
+                    Console.WriteLine(Error("You already have " + cartQuantities[itemIndex] + " of "
+                                            + menuNames[itemIndex] + ". The most allowed is " + MaxQuantity + "."));
+                    continue;
+                }
+
+                cartQuantities[itemIndex] += quantity;
+                return Info("Added " + quantity + " x " + menuNames[itemIndex] + ".");
+            }
+        }
+
+        /// <summary>
+        /// Order review loop. Returns true when the customer is finished
+        /// (order paid or cancelled), false to go back to the menu.
+        /// </summary>
+        static bool ReviewOrder()
+        {
+            string message = "";
+
+            while (true)
+            {
+                if (CountCartItems() == 0)
+                {
+                    // Empty orders can never reach payment.
+                    ShowMessageBox("Your order is empty. Please add at least one item first.");
+                    return false;
+                }
+
+                ShowReviewScreen(message);
+                message = "";
+
+                string choice = ReadInput("Enter your choice").ToUpperInvariant();
+
+                switch (choice)
+                {
+                    case "A":
+                        return false;
+
+                    case "P":
+                        PaymentResult result = ProcessPayment();
+                        if (result == PaymentResult.Paid || result == PaymentResult.Cancelled)
+                        {
+                            return true;
+                        }
+                        break;      // BackToOrder: show the review again
+
+                    case "X":
+                        if (ConfirmCancel())
+                        {
+                            return true;
+                        }
+                        break;
+
+                    default:
+                        message = Error("Invalid choice. Enter A, P or X.");
+                        break;
+                }
+            }
+        }
+
+        static void ShowReviewScreen(string message)
+        {
+            PaidOrder preview = BuildOrderFromCart(0m, 0m);
+
+            BeginScreen();
+            DrawHeader("YOUR ORDER");
+            DrawOrderTable(preview);
+            DrawRow("ORDER TOTAL", FormatMoney(preview.Total));
+            DrawActions(
+                "  [A] Add more items",
+                "  [P] Confirm and proceed to payment",
+                "  [X] Cancel order");
+            EndScreen(message);
+        }
+
     }
 }
 
