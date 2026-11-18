@@ -1065,6 +1065,207 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
                 Console.WriteLine(Error("Please enter Y or N."));
             }
         }
+        static void BeginScreen()
+        {
+            ClearScreen();
+            Console.WriteLine("╔" + new string('═', BoxInner) + "╗");
+        }
+
+        /// <summary>Draws the bottom border, then the error/info message (if any) under the box.</summary>
+        static void EndScreen(string message = "")
+        {
+            Console.WriteLine("╚" + new string('═', BoxInner) + "╝");
+            ShowMessage(message);
+        }
+
+        /// <summary>Title line (optionally with right-aligned text) followed by a divider.</summary>
+        static void DrawHeader(string title, string rightText = "")
+        {
+            if (rightText.Length == 0)
+            {
+                DrawLine(" " + title);
+            }
+            else
+            {
+                DrawRow(title, rightText);
+            }
+            DrawDivider();
+        }
+
+        /// <summary>Centered title lines with a blank line above and below, then a divider.</summary>
+        static void DrawBanner(params string[] lines)
+        {
+            DrawCentered("");
+            foreach (string line in lines)
+            {
+                DrawCentered(line);
+            }
+            DrawCentered("");
+            DrawDivider();
+        }
+
+        /// <summary>A block of option lines padded with a blank line above and below.</summary>
+        static void DrawOptions(params string[] options)
+        {
+            DrawBlank();
+            foreach (string option in options)
+            {
+                DrawLine(option);
+            }
+            DrawBlank();
+        }
+
+        /// <summary>A divider followed by the key hints for the screen.</summary>
+        static void DrawActions(params string[] actions)
+        {
+            DrawDivider();
+            foreach (string action in actions)
+            {
+                DrawLine(action);
+            }
+        }
+
+        // ---------- Order table (used by the review screen and the receipt) ----------
+
+        /// <summary>Column headings, every item of the order, and the closing rule.</summary>
+        static void DrawOrderTable(PaidOrder order)
+        {
+            DrawTableRow("Item", "Unit Price", "Qty", "Subtotal");
+            DrawRule();
+
+            for (int i = 0; i < order.ItemNames.Count; i++)
+            {
+                DrawTableRow(
+                    Fit(order.ItemNames[i], 20),
+                    FormatMoney(order.UnitPrices[i]),
+                    order.Quantities[i].ToString(CultureInfo.InvariantCulture),
+                    FormatMoney(order.Subtotals[i]));
+            }
+
+            DrawRule();
+        }
+
+        static void DrawTableRow(string item, string unitPrice, string quantity, string subtotal)
+        {
+            DrawLine(string.Format(" {0,-20}{1,14}{2,6}{3,18}", item, unitPrice, quantity, subtotal));
+        }
+
+        static void DrawRule()
+        {
+            DrawLine(" " + new string('─', 58));
+        }
+
+        // ---------- Pop-up style boxes ----------
+
+        /// <summary>A small boxed message in the middle of an otherwise empty screen.</summary>
+        static void ShowMessageBox(string text, bool waitForEnter = true)
+        {
+            BeginScreen();
+            DrawBlank();
+            DrawCentered(text);
+            DrawBlank();
+            EndScreen();
+
+            if (waitForEnter)
+            {
+                Pause();
+            }
+        }
+
+        static void Pause()
+        {
+            ReadInput("Press Enter to continue");
+        }
+
+        // ---------- Messages under the box ----------
+
+        static string Error(string text)
+        {
+            return " ! " + text;
+        }
+
+        static string Info(string text)
+        {
+            return " + " + text;
+        }
+
+        static void ShowMessage(string message)
+        {
+            if (!string.IsNullOrEmpty(message))
+            {
+                Console.WriteLine(message);
+            }
+        }
+
+        // ---------- Basic line drawing ----------
+
+        static void DrawDivider()
+        {
+            Console.WriteLine("╠" + new string('═', BoxInner) + "╣");
+        }
+
+        static void DrawBlank()
+        {
+            DrawLine("");
+        }
+
+        /// <summary>One boxed line, padded (or cut) to the box width.</summary>
+        static void DrawLine(string text)
+        {
+            Console.WriteLine("║" + Fit(text, BoxInner).PadRight(BoxInner) + "║");
+        }
+
+        static void DrawCentered(string text)
+        {
+            text = Fit(text, BoxInner);
+            int left = (BoxInner - text.Length) / 2;
+            DrawLine(new string(' ', left) + text);
+        }
+
+        /// <summary>Left text and right-aligned text on the same line.</summary>
+        static void DrawRow(string left, string right)
+        {
+            int space = BoxInner - 2 - left.Length - right.Length;
+
+            if (space < 1)
+            {
+                left = Fit(left, Math.Max(4, BoxInner - 3 - right.Length));
+                space = Math.Max(1, BoxInner - 2 - left.Length - right.Length);
+            }
+
+            DrawLine(" " + left + new string(' ', space) + right);
+        }
+
+        // ---------- Text helpers ----------
+
+        /// <summary>Money for display: "PHP 1,234.50".</summary>
+        static string FormatMoney(decimal amount)
+        {
+            return Currency + " " + amount.ToString("N2", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>Shortens text that is too long for its column.</summary>
+        static string Fit(string text, int maxLength)
+        {
+            if (text.Length <= maxLength)
+            {
+                return text;
+            }
+            return text.Substring(0, maxLength - 3) + "...";
+        }
+
+        static void ClearScreen()
+        {
+            try
+            {
+                Console.Clear();
+            }
+            catch (IOException)
+            {
+                // Output is redirected (e.g. to a file); just keep going.
+            }
+        }
+
     }
 }
 
