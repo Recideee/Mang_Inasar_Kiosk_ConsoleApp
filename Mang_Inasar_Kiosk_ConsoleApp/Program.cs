@@ -30,9 +30,6 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
             Cancelled,
             BackToOrder
         }
-
-        class Program
-        {
             
             const string RecordsFilePath = @"C:\Users\AJ\Downloads\MangInsar.csv";
 
@@ -99,7 +96,6 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
 
             // Cart quantity for each menu item (same index as the menu arrays).
             static readonly int[] cartQuantities = new int[menuNames.Length];
-        }
 
         static void Main()
         {
