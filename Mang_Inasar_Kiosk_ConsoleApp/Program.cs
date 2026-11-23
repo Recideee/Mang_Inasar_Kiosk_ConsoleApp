@@ -61,38 +61,52 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
 
             static readonly string[] menuNames =
             {
-            "Chicken Inasal Regular",       //  Ihaw-Sarap Savers
-            "Pork Sisig",                   //  Ihaw-Sarap Savers
-            "Bangus Sisig",                 //  Ihaw-Sarap Savers
-            "Pork BBQ",                     //  Grilled Pork 
-            "Grilled Liempo",               //  Grilled Pork 
-            "Solo Fiesta: 2pc Pork BBQ",    //  What's New 
-            "Chicken Inasal Paa",           //  What's New
-            "Paa Large Solo",               //  Chicken Inasal
-            "Pecho Large",                  //  Chicken Inasal
-            "Family Size",                  //  Palabok 
-            "Extra Creamy Halo-Halo",       //  Halo-Halo 
-            "Crema de Leche Halo-Halo"      //  Halo-Halo
+            "Chicken Inasal Regular",               //  Ihaw-Sarap Savers
+            "Pork Sisig",                           //  Ihaw-Sarap Savers
+            "Bangus Sisig",                         //  Ihaw-Sarap Savers
+            "Chicken Inasal Regular Unli Rice",     //  Ihaw-Sarap Savers
+            "Pork Sisig Unli Rice",                 //  Ihaw-Sarap Savers
+            "Bangus Sisig Unli Rice",               //  Ihaw-Sarap Savers
+            "Pork BBQ",                             //  Grilled Pork 
+            "Grilled Liempo",                       //  Grilled Pork 
+            "Pork BBQ Unli Rice",                   //  Grilled Pork
+            "Grilled Liempo Unli Rice",             //  Grilled Pork
+            "Solo Fiesta: 2pc Pork BBQ",            //  What's New 
+            "Chicken Inasal Paa",                   //  What's New
+            "Paa Large Solo",                       //  Chicken Inasal
+            "Pecho Large Solo",                     //  Chicken Inasal
+            "Paa Large Solo Unli Rice",             //  Chicken Inasal
+            "Petcho Large Solo Unli Rice",          //  Chicken Inasal
+            "Family Size",                          //  Palabok 
+            "Extra Creamy Halo-Halo",               //  Halo-Halo 
+            "Crema de Leche Halo-Halo"              //  Halo-Halo
         };
 
             static readonly decimal[] menuPrices =
             {
-            124.00m, //  Ihaw-Sarap Savers
-            124.00m, //  Ihaw-Sarap Savers
-            154.00m, //  Ihaw-Sarap Savers
+            99.00m, //  Ihaw-Sarap Savers
+            99.00m, //  Ihaw-Sarap Savers
+            99.00m, //  Ihaw-Sarap Savers
+            119.00m, //  Ihaw-Sarap Savers Unli Rice 
+            119.00m, //  Ihaw-Sarap Savers Unli Rice 
+            119.00m, //  Ihaw-Sarap Savers Unli Rice 
+            115.00m, //  Grilled Pork
             124.00m, //  Grilled Pork
-            154.00m, //  Grilled Pork
+            135.00m, //  Grilled Pork Unli Rice 
+            144.00m, //  Grilled Pork Unli Rice
             214.00m, //  What's New 
             219.00m, //  What's New 
-            154.00m, //  Chicken Inasal
-            179.00m, //  Chicken Inasal
+            120.00m, //  Chicken Inasal
+            120.00m, //  Chicken Inasal
+            140.00m, //  Chicken Inasal Unli Rice 
+            140.00m, //  Chicken Inasal Unli Rice 
             305.00m, //  Palabok
             39.00m,  //  Halo-Halo
             39.00m   //  Halo-Halo
         };
 
             // Category index (into categoryNames) for each menu item.
-            static readonly int[] menuCategory = { 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 5, 5 };
+            static readonly int[] menuCategory = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 4, 5, 5 };
 
             // Cart quantity for each menu item (same index as the menu arrays).
             static readonly int[] cartQuantities = new int[menuNames.Length];
@@ -262,7 +276,7 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
             {
                 if (menuCategory[i] == categoryIndex)
                 {
-                    DrawLine(string.Format("  [{0,2}]  {1,-24}{2,16}", i + 1, menuNames[i], FormatMoney(menuPrices[i])));
+                    DrawLine(string.Format("  [{0,2}]  {1,-36}{2,16}", i + 1, menuNames[i], FormatMoney(menuPrices[i])));
                 }
             }
 
@@ -1132,7 +1146,7 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
             for (int i = 0; i < order.ItemNames.Count; i++)
             {
                 DrawTableRow(
-                    Fit(order.ItemNames[i], 20),
+                    Fit(order.ItemNames[i], 26),
                     FormatMoney(order.UnitPrices[i]),
                     order.Quantities[i].ToString(CultureInfo.InvariantCulture),
                     FormatMoney(order.Subtotals[i]));
@@ -1143,7 +1157,7 @@ namespace Mang_Inasar_Kiosk_ConsoleApp
 
         static void DrawTableRow(string item, string unitPrice, string quantity, string subtotal)
         {
-            DrawLine(string.Format(" {0,-20}{1,14}{2,6}{3,18}", item, unitPrice, quantity, subtotal));
+            DrawLine(string.Format(" {0,-26}{1,13}{2,5}{3,14}", item, unitPrice, quantity, subtotal));
         }
 
         static void DrawRule()
